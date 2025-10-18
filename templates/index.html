@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Simple Python Web Calculator</title>
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; background:#f3f4f6; color:#111827; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; }
+    .card { background:white; padding:20px; border-radius:10px; box-shadow:0 6px 20px rgba(2,6,23,0.08); width:360px; }
+    .row { display:flex; gap:8px; margin-bottom:10px; }
+    input[type="text"]{flex:1;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:16px}
+    button{padding:10px 12px;border-radius:6px;border:none;cursor:pointer;background:#0ea5a4;color:white;font-weight:600}
+    .ops button{background:#1f2937}
+    .result{margin-top:12px;padding:10px;border-radius:6px;background:#eef2ff}
+    .error{color:#b91c1c;font-weight:600}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Simple Calculator</h2>
+    <div class="row">
+      <input id="a" type="text" placeholder="First number (e.g. 12.5)" />
+      <input id="b" type="text" placeholder="Second number" />
+    </div>
+    <div class="row ops" style="justify-content:space-between">
+      <button onclick="compute('+')">+</button>
+      <button onclick="compute('-')">−</button>
+      <button onclick="compute('*')">×</button>
+      <button onclick="compute('/')">÷</button>
+    </div>
+
+    <div class="result" id="result">Result: <span id="resText">—</span></div>
+    <div style="margin-top:8px;display:flex;gap:8px">
+      <button id="clear" style="background:#ef4444">Clear</button>
+      <button id="copy">Copy Result</button>
+    </div>
+    <div id="error" class="error" style="margin-top:8px;display:none"></div>
+  </div>
+
+  <script>
+    async function compute(op){
+      document.getElementById('error').style.display = 'none';
+      const a = document.getElementById('a').value.trim();
+      const b = document.getElementById('b').value.trim();
+      const payload = { a, b, op };
+      try {
+        const resp = await fetch('/compute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          document.getElementById('error').textContent = data.error || 'Error';
+          document.getElementById('error').style.display = 'block';
+          document.getElementById('resText').textContent = '—';
+          return;
+        }
+        document.getElementById('resText').textContent = data.result;
+      } catch (err) {
+        document.getElementById('error').textContent = 'Network error (is the server running?)';
+        document.getElementById('error').style.display = 'block';
+      }
+    }
+
+    document.getElementById('clear').addEventListener('click', () => {
+      document.getElementById('a').value = '';
+      document.getElementById('b').value = '';
+      document.getElementById('resText').textContent = '—';
+      document.getElementById('error').style.display = 'none';
+    });
+
+    document.getElementById('copy').addEventListener('click', () => {
+      const txt = document.getElementById('resText').textContent;
+      if (txt && txt !== '—') navigator.clipboard?.writeText(txt);
+    });
+  </script>
+</body>
+</html>
